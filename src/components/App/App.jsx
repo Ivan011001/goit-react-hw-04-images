@@ -28,9 +28,7 @@ export default function App() {
       <GlobalStyle $modalOpened={modalOpened} />
       <AppContainer>
         <Searchbar onSubmit={onSearchFormSubmit} />
-        {searchValue && (
-          <ImageGallery searchValue={searchValue} toggleModal={toggleModal} />
-        )}
+        <ImageGallery searchValue={searchValue} toggleModal={toggleModal} />
         {modalOpened && <Modal toggleModal={toggleModal} img={modalImage} />}
         <ToastContainer />
       </AppContainer>

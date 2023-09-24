@@ -1,101 +1,160 @@
 import PropTypes from 'prop-types';
 import { toast } from 'react-toastify';
-import { Component } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Button from 'components/Button';
 import Loader from 'components/Loader';
 import ImageGalleryItem from 'components/ImageGalleryItem';
 import { Gallery } from './ImageGallery.styled';
 import { getImagesBySearchQuery } from '../../services/pixabayAPI';
 
-export default class ImageGallery extends Component {
-  state = {
-    images: [],
-    isLoading: false,
-    currentPage: 1,
-    error: null,
-  };
+export default function ImageGallery({ searchValue, toggleModal }) {
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [images, setImages] = useState([]);
 
-  static propTypes = {
-    searchValue: PropTypes.string.isRequired,
-    toggleModal: PropTypes.func.isRequired,
-  };
+  const mount = useRef(true);
 
-  componentDidUpdate(prevProps, prevState) {
-    if (prevProps.searchValue !== this.props.searchValue) {
-      this.setState(
-        { images: [], isLoading: true, currentPage: 1 },
-        this.fetchImages
-      );
-    }
-  }
+  useEffect(() => {
+    if (!searchValue) return;
 
-  onLoadMoreClick = () => {
-    this.setState(
-      prevState => ({
-        isLoading: true,
-        currentPage: prevState.currentPage + 1,
-      }),
-      this.fetchImages
-    );
-  };
+    const fetchImages = async () => {
+      try {
+        setPage(1);
+        setLoading(true);
+        setImages([]);
+        const newImages = await getImagesBySearchQuery(searchValue, 1);
 
-  fetchImages = async () => {
-    const { currentPage } = this.state;
-    const { searchValue } = this.props;
+        if (!newImages) {
+          toast.error('Sorry... There are no images', {
+            autoClose: 2500,
+            pauseOnHover: false,
+          });
+          return;
+        }
 
-    try {
-      const newImages = await getImagesBySearchQuery(searchValue, currentPage);
-
-      if (!newImages) {
-        return toast.error('Sorry... There are no such images', {
-          autoClose: 2500,
-          pauseOnHover: false,
-        });
+        setImages(newImages.hits);
+      } catch (error) {
+        console.error('Error fetching images:', error);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      this.setState(prevState => ({
-        images: [...prevState.images, ...newImages.hits],
-        imagesLoading: true,
-      }));
+    fetchImages();
+  }, [searchValue]);
 
-      if (newImages.hits.length < 12) this.setState({ imagesLoading: false });
-    } catch (error) {
-      this.errorResponse(error);
-    } finally {
-      this.setState({ isLoading: false });
+  useEffect(() => {
+    if (mount.current || page === 1) {
+      mount.current = false;
+      return;
     }
-  };
 
-  errorResponse = error => {
-    this.setState({ error: error.message }, () => {
-      toast.error(`Sorry... There was an error: ${this.state.error}`, {
-        autoClose: 2500,
-        pauseOnHover: false,
-      });
-    });
-  };
+    const fetchImages = async () => {
+      try {
+        setLoading(true);
+        const newImages = await getImagesBySearchQuery(searchValue, page);
 
-  render() {
-    const { images, isLoading } = this.state;
+        if (!newImages) {
+          toast.error('Sorry... There are no such images', {
+            autoClose: 2500,
+            pauseOnHover: false,
+          });
+          return;
+        }
 
-    return (
-      <>
-        <Gallery>
-          {images.map(image => (
-            <ImageGalleryItem
-              key={image.id}
-              smallImg={image.webformatURL}
-              largeImg={image.largeImageURL}
-              tags={image.tags}
-              toggleModal={() => this.props.toggleModal(image.largeImageURL)}
-            />
-          ))}
-        </Gallery>
+        setImages(prevImages => [...prevImages, ...newImages.hits]);
+      } catch (error) {
+        console.error('Error fetching more images:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-        {isLoading && <Loader />}
+    fetchImages();
+  }, [page, searchValue]);
 
-        {images.length > 0 && <Button onClick={this.onLoadMoreClick} />}
-      </>
-    );
-  }
+  return (
+    <>
+      <Gallery>
+        {images.map(image => (
+          <ImageGalleryItem
+            key={image.id}
+            smallImg={image.webformatURL}
+            largeImg={image.largeImageURL}
+            tags={image.tags}
+            toggleModal={() => toggleModal(image.largeImageURL)}
+          />
+        ))}
+      </Gallery>
+
+      {loading && <Loader />}
+
+      {images.length > 0 && (
+        <Button onClick={() => setPage(prev => prev + 1)} />
+      )}
+    </>
+  );
 }
+
+ImageGallery.propTypes = {
+  searchValue: PropTypes.string.isRequired,
+  toggleModal: PropTypes.func.isRequired,
+};
+
+// export default class ImageGallery extends Component {
+
+//   componentDidUpdate(prevProps, prevState) {
+//     if (prevProps.searchValue !== this.props.searchValue) {
+//       this.setState(
+//         { images: [], isLoading: true, currentPage: 1 },
+//         this.fetchImages
+//       );
+//     }
+//   }
+
+//   onLoadMoreClick = () => {
+//     this.setState(
+//       prevState => ({
+//         isLoading: true,
+//         currentPage: prevState.currentPage + 1,
+//       }),
+//       this.fetchImages
+//     );
+//   };
+
+//   fetchImages = async () => {
+//     const { currentPage } = this.state;
+//     const { searchValue } = this.props;
+
+//     try {
+//       const newImages = await getImagesBySearchQuery(searchValue, currentPage);
+
+//       if (!newImages) {
+//         return toast.error('Sorry... There are no such images', {
+//           autoClose: 2500,
+//           pauseOnHover: false,
+//         });
+//       }
+
+//       this.setState(prevState => ({
+//         images: [...prevState.images, ...newImages.hits],
+//         imagesLoading: true,
+//       }));
+
+//       if (newImages.hits.length < 12) this.setState({ imagesLoading: false });
+//     } catch (error) {
+//       this.errorResponse(error);
+//     } finally {
+//       this.setState({ isLoading: false });
+//     }
+//   };
+
+//   errorResponse = error => {
+//     this.setState({ error: error.message }, () => {
+//       toast.error(`Sorry... There was an error: ${this.state.error}`, {
+//         autoClose: 2500,
+//         pauseOnHover: false,
+//       });
+//     });
+//   };
+// }
