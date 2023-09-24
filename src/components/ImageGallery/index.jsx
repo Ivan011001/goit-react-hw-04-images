@@ -11,6 +11,7 @@ export default function ImageGallery({ searchValue }) {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState([]);
+  const [canLoadMore, setCanLoadMore] = useState(false);
 
   const mount = useRef(true);
 
@@ -22,10 +23,11 @@ export default function ImageGallery({ searchValue }) {
         setPage(1);
         setLoading(true);
         setImages([]);
+        setCanLoadMore(false);
         const newImages = await getImagesBySearchQuery(searchValue, 1);
 
         if (!newImages) {
-          toast.error('Sorry... There are no images', {
+          toast.error('Sorry... There are no such images', {
             autoClose: 2500,
             pauseOnHover: false,
           });
@@ -33,6 +35,8 @@ export default function ImageGallery({ searchValue }) {
         }
 
         setImages(newImages.hits);
+        if (newImages.hits.length < 12) setCanLoadMore(false);
+        if (newImages.hits.length === 12) setCanLoadMore(true);
       } catch (error) {
         console.error('Error fetching images:', error);
       } finally {
@@ -55,7 +59,7 @@ export default function ImageGallery({ searchValue }) {
         const newImages = await getImagesBySearchQuery(searchValue, page);
 
         if (!newImages) {
-          toast.error('Sorry... There are no such images', {
+          toast.error('Sorry... There are no more images', {
             autoClose: 2500,
             pauseOnHover: false,
           });
@@ -63,6 +67,7 @@ export default function ImageGallery({ searchValue }) {
         }
 
         setImages(prevImages => [...prevImages, ...newImages.hits]);
+        if (newImages.hits.length < 12) setCanLoadMore(false);
       } catch (error) {
         console.error('Error fetching more images:', error);
       } finally {
@@ -88,9 +93,7 @@ export default function ImageGallery({ searchValue }) {
 
       {loading && <Loader />}
 
-      {images.length > 0 && (
-        <Button onClick={() => setPage(prev => prev + 1)} />
-      )}
+      {canLoadMore && <Button onClick={() => setPage(prev => prev + 1)} />}
     </>
   );
 }
