@@ -7,7 +7,7 @@ import ImageGalleryItem from 'components/ImageGalleryItem';
 import { Gallery } from './ImageGallery.styled';
 import { getImagesBySearchQuery } from '../../services/pixabayAPI';
 
-export default function ImageGallery({ searchValue, toggleModal }) {
+export default function ImageGallery({ searchValue }) {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState([]);
@@ -82,7 +82,6 @@ export default function ImageGallery({ searchValue, toggleModal }) {
             smallImg={image.webformatURL}
             largeImg={image.largeImageURL}
             tags={image.tags}
-            toggleModal={() => toggleModal(image.largeImageURL)}
           />
         ))}
       </Gallery>
@@ -98,63 +97,4 @@ export default function ImageGallery({ searchValue, toggleModal }) {
 
 ImageGallery.propTypes = {
   searchValue: PropTypes.string.isRequired,
-  toggleModal: PropTypes.func.isRequired,
 };
-
-// export default class ImageGallery extends Component {
-
-//   componentDidUpdate(prevProps, prevState) {
-//     if (prevProps.searchValue !== this.props.searchValue) {
-//       this.setState(
-//         { images: [], isLoading: true, currentPage: 1 },
-//         this.fetchImages
-//       );
-//     }
-//   }
-
-//   onLoadMoreClick = () => {
-//     this.setState(
-//       prevState => ({
-//         isLoading: true,
-//         currentPage: prevState.currentPage + 1,
-//       }),
-//       this.fetchImages
-//     );
-//   };
-
-//   fetchImages = async () => {
-//     const { currentPage } = this.state;
-//     const { searchValue } = this.props;
-
-//     try {
-//       const newImages = await getImagesBySearchQuery(searchValue, currentPage);
-
-//       if (!newImages) {
-//         return toast.error('Sorry... There are no such images', {
-//           autoClose: 2500,
-//           pauseOnHover: false,
-//         });
-//       }
-
-//       this.setState(prevState => ({
-//         images: [...prevState.images, ...newImages.hits],
-//         imagesLoading: true,
-//       }));
-
-//       if (newImages.hits.length < 12) this.setState({ imagesLoading: false });
-//     } catch (error) {
-//       this.errorResponse(error);
-//     } finally {
-//       this.setState({ isLoading: false });
-//     }
-//   };
-
-//   errorResponse = error => {
-//     this.setState({ error: error.message }, () => {
-//       toast.error(`Sorry... There was an error: ${this.state.error}`, {
-//         autoClose: 2500,
-//         pauseOnHover: false,
-//       });
-//     });
-//   };
-// }
